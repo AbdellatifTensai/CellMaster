@@ -305,7 +305,7 @@ void ParseCells(cells Cells){
 	node Nodes[32];
 	usize NodesCount = 0;
 
-	for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //no need
+	for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //look up to this
 
 	for(usize Row=0; Row<Cells.RowsCount; Row++)
 		for(usize Column=0; Column<Cells.ColumnsCount; Column++){
@@ -324,7 +324,7 @@ void ParseCells(cells Cells){
 				char Buff[10];
 				usize BuffLength = snprintf(Buff, 10, "%ld", ParsedCell);
 				CellSet(Cells, (string){Buff, BuffLength}, Row, Column);
-				for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //no need
+				for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //look up to this
 			}
 		}
 }
@@ -347,6 +347,15 @@ int main(){
 		"3      |4   |   5\n"
 		"=12-13*9    |=19*10\n"
 	);
+
+	//note: figure out the memory layout, no need for rows cols capacity, maybe consider storing position
+	//of the cell as well, position will add 2*8 bytes, with 8 for length, that will be 24 bytes of metadata
+	//which i think is better, because the cells will be contiguous for cache locality, so the operations can
+	//be very fast, which is the point of this,or maybe figure out
+	//something else.
+	//note: if more memory needed to store the data, realloc the buffer with double the size, if more memory
+	//needed, say more than 128 chars, malloc that specific cell, so the rest will not get bigger for no benefit
+	//note: profile function ParseCells, and figure out better way to store tokens/nodes for cache reasons
 
 	cells Cells = (cells){
 		.RowsCount = 0,
