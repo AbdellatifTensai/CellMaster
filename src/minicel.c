@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 typedef size_t usize;
 typedef ssize_t ssize;
@@ -42,11 +42,15 @@ typedef struct{
 	usize ColumnsCapacity;
 } cells;
 
-#define CellIndexAt(Cells, Row, Column) ((Row) * (Cells).ColumnsCount + (Column) * (Cells.CellSize))
-
 void PrintString(const string Input){
 	for(usize CharIndex=0; CharIndex<Input.Length; CharIndex++)
 		putchar(Input.Data[CharIndex]);
+}
+
+void CopyString(string From, string To){
+	assert(From.Length <= To.Length);
+	memcpy(From.Data, To.Data, From.Length);
+	To.Length = From.Length;
 }
 
 void Split(string Input, string Delims, string *OutStrings, usize *OutStringsCount){
@@ -81,19 +85,19 @@ void Split(string Input, string Delims, string *OutStrings, usize *OutStringsCou
 	*OutStringsCount = StringsIndex;
 }
 
-string TrimLeftRight(const string Input){
-	string OutString = EMPTY_STRING;
-	char *CurrentCharacter = Input.Data;
-	while(*CurrentCharacter++ == ' ' && CurrentCharacter < (Input.Data + Input.Length));
+void Trim(string *Input){
+	string Temp;
+	char *CurrentCharacter = Input->Data;
+	while(*CurrentCharacter++ == ' ' && CurrentCharacter < (Input->Data + Input->Length));
 
-	OutString.Data = CurrentCharacter - 1;
+	Temp.Data = CurrentCharacter - 1;
 
-	CurrentCharacter = Input.Data + Input.Length - 1;
-	while(*CurrentCharacter == ' ' && CurrentCharacter >= OutString.Data)
+	CurrentCharacter = Input->Data + Input->Length - 1;
+	while(*CurrentCharacter == ' ' && CurrentCharacter >= Temp.Data)
 		CurrentCharacter--;
 	
-	OutString.Length = CurrentCharacter - OutString.Data + 1;
-	return OutString;
+	Temp.Length = CurrentCharacter - Temp.Data + 1;
+	*Input = Temp;
 }
 
 void CountRowsColumns(cells *Cells, const string Input, char delim){
@@ -300,13 +304,17 @@ void ParseCells(cells Cells){
 	usize TokensCount = 0;
 	node Nodes[32];
 	usize NodesCount = 0;
-	//for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //no need
+
+	for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //no need
+
 	for(usize Row=0; Row<Cells.RowsCount; Row++)
 		for(usize Column=0; Column<Cells.ColumnsCount; Column++){
 			string Cell = CellGet(Cells, Row, Column);
 			if(Cell.Data[0] == '='){
 				string Field = (string){ .Data = &Cell.Data[1], .Length = Cell.Length - 1 };
 				Split(Field, STR("+-*/()"), Tokens, &TokensCount);
+				for(usize TokenIndex=0; TokenIndex<TokensCount; TokenIndex++)
+					Trim(&Tokens[TokenIndex]);
 
 				usize CurrentTokenIndex = 0;
 				Expression(Tokens, &CurrentTokenIndex, Nodes, &NodesCount, 0);
@@ -316,6 +324,7 @@ void ParseCells(cells Cells){
 				char Buff[10];
 				usize BuffLength = snprintf(Buff, 10, "%ld", ParsedCell);
 				CellSet(Cells, (string){Buff, BuffLength}, Row, Column);
+				for(usize x=0;x<Cells.DataCapacity;x++){ Tokens[x] = EMPTY_STRING; Nodes[x] = EMPTY_NODE; } //no need
 			}
 		}
 }
