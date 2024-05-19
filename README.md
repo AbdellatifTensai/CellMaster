@@ -5,4 +5,4 @@ Features/Plans:
 - implement small subset of excel functions ( MIN, MAX, AVERAGE...). <- WIP
 - very simple gui version with Raylib. <- WIP
 - graph ploting (maybe with gnuplot?). <- Maybe
-- awk support for scripting (like visual basic in excel). <- Not Sure
+- awk/python support for scripting (like visual basic in excel). <- Not Sure

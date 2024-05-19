@@ -1,0 +1,6 @@
+-figure out the memory layout, no need for rows cols capacity, maybe consider storing position of the cell as well, position will add 2*8 bytes, with 8 for length, that will be 24 bytes of metadata which i think is better, because the cells will be contiguous for cache locality, so the operations can be very fast, which is the point of this, or maybe figure out something else.
+-if more memory needed to store the data, realloc the buffer with double the size, if more memory needed, say more than 128 chars, malloc that specific cell, so the rest will not get bigger for no benefit
+note: maybe seperate teh cells as cells holding doubles, chars and cells to be parsed, so everything is contiguous, cells with doubles are contiguous and stored by row, cells with chars contiguous in the case of sorting by name for example, cells to be parsed also contiguous so parsing is efficient, maybe? so many hypothesis but no testing.
+note: how to allow user to modify cells that contains doubles? at any time they can modify the value, maybe copy the table, one copy only cells holding doubles, and the other for chars.
+todo: make node struct use relative pointers instead of absolute for right,left
+todo: major refactoring, names, simplifying Split(), avx version for Split() Trim() ...
