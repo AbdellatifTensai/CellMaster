@@ -4,3 +4,6 @@ note: maybe seperate teh cells as cells holding doubles, chars and cells to be p
 note: how to allow user to modify cells that contains doubles? at any time they can modify the value, maybe copy the table, one copy only cells holding doubles, and the other for chars.
 todo: make node struct use relative pointers instead of absolute for right,left
 todo: major refactoring, names, simplifying Split(), avx version for Split() Trim() ...
+todo: fix get set erase cells, fix FillCells()
+note: the one thing i haven't anticipated is fragmentation, if the user clicked on one cell, it will be added in the CellPos array, even without data, except if that cell got used again, cells wil lstill be contiguous especially compared to the previous approach, which was better in terms of getting and setting the cells because i was indexing the directly by row col position, now we need to traverse all of them to find the position we need, but the previous one had a lot of empty space which of course meant that the cells are not contiguous, which maybe doesn't perform as good as if the cells were?
+todo: profile everything, i have no idea which memory layout is better
