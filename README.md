@@ -1,8 +1,15 @@
-an excel clone, inspired by: https://www.youtube.com/playlist?list=PLpM-Dvs8t0VYfQc5dq21Vc81G1rGHwkmT
+a spreadsheet app prioritizing performance
 
-Features/Plans:
-- cli version for parsing input files. <- done
-- implement small subset of excel functions ( MIN, MAX, AVERAGE...). <- WIP
-- very simple gui version with Raylib. <- WIP
-- graph ploting (maybe with gnuplot?). <- Maybe
-- awk/python support for scripting (like visual basic in excel). <- Not Sure
+only works on linux for now
+
+```
+./build.sh
+./build/main resources/test.csv
+```
+
+to test with 1 million lines
+```
+cd resources
+./gen.py --rows 1000000 --output 1M.csv
+../build/main 1M.csv
+```
