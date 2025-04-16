@@ -21,6 +21,17 @@ typedef enum { false = 0, true = !false } b32;
 #define SIGN(x) ((x) < 0? -1: 1)
 #define ABS(x) ((x) < 0? (-(x)): (x))
 
+typedef struct{ char *Data; u32 Count; } str_slice;
+typedef struct{ u32 *Data; u32 Count; } u32_slice;
+
+str_slice StrSlice(char *Data, u32 Count){ return (str_slice){ .Data = Data, .Count = Count }; }
+u32_slice U32Slice(u32 *Data, u32 Count){ return (u32_slice){ .Data = Data, .Count = Count }; }
+
+char EMPTY_STR[] = "";
+u32 EMPTY_U32 = 0;
+str_slice EMPTY_STR_SLICE = { .Data = "", .Count = 0 };
+u32_slice EMPTY_U32_SLICE = { .Data = &EMPTY_U32, .Count = 0 };
+
 typedef struct{ f32 x, y; } v2f;
 v2f V2f(f32 x, f32 y){ return (v2f){x, y}; }
 
