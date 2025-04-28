@@ -3,11 +3,6 @@
 set -xe
 
 CFLAGS="-Wall -Wextra -pedantic"
-
-# static linking
-#LINKER_FLAGS=" -lm `pkg-config x11 --libs --static | sed -E 's/-l(\w*)/-l:lib\1.a/g'`"
-    
-# dynamic linking
 LINKER_FLAGS="-lX11"
 
 mkdir -p build

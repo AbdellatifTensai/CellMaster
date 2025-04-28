@@ -1,7 +1,10 @@
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <stdio.h>
 #include <errno.h>
 #include <error.h>
+#include <sched.h>
+#include <signal.h>
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -26,13 +29,34 @@ b32 CheckFileExtension(char *FileName, char *Extension, i32 Length){
         return true;
 }
 
+typedef struct{ char *File; u32 FileSize; u32_slice *LinesIdxOut; } index_file_lines;
+int IndexFileLines(void *Args){
+        index_file_lines Indexer = *(index_file_lines *)Args;
+        u32 LinesCount = 0; 
+        for(u32 Idx=0; Idx<Indexer.FileSize; Idx++)
+                if(Indexer.File[Idx] == '\n')
+                        LinesCount++;
+
+        u32 LinesIdxSize = (LinesCount + 1) * sizeof(u32);
+        Indexer.LinesIdxOut->Data = (u32 *) mmap(0,LinesIdxSize, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+        Indexer.LinesIdxOut->Count = LinesCount;
+        Indexer.LinesIdxOut->Data[0] = 0;
+        for(u32 Idx=0, LineIdx=1; Idx<Indexer.FileSize; Idx++)
+                if(Indexer.File[Idx] == '\n')
+                        Indexer.LinesIdxOut->Data[LineIdx++] = Idx;
+        return 0;
+}
+
 i32 main(i32 ArgCount, char **Args){
+
         if(ArgCount < 2){
                 printf("USAGE: ./main <file.csv>\n");
                 return 1;
         }
 
-        char *FileName = Args[1]; if(!CheckFileExtension(FileName, "csv", 3)){printf("The file '%s' is not a CSV file\n", FileName);
+        char *FileName = Args[1];
+        if(!CheckFileExtension(FileName, "csv", 3)){
+                printf("The file '%s' is not a CSV file\n", FileName);
                 return 1;
         }
 
@@ -48,39 +72,32 @@ i32 main(i32 ArgCount, char **Args){
         char *File = (char *) mmap(0, FileSize, PROT_READ, MAP_PRIVATE, Fd, 0);
         close(Fd);
 
-        // TODO: find a better way other than two passes
-        u32 LinesCount = 0; 
-        for(u32 Idx=0; Idx<FileSize; Idx++)
-                if(File[Idx] == '\n')
-                        LinesCount++;
-
         v2u CellsCount = V2u(6, 24);
 
         frame_buffer Frame = { .Width = 1600, .Height = 800, .Stride = 0 };
         str_slice Input = EMPTY_STR_SLICE;
         str_slice DebugBuffer = EMPTY_STR_SLICE;
+
         u32_slice LinesIdx = EMPTY_U32_SLICE;
+        
+        u8 ChildProcStack[4096];
+        u32 ChildProcStackSize = 4096; 
+        index_file_lines Indexer = (index_file_lines){ File, FileSize, &LinesIdx };
+        pid_t ChildPid = clone(IndexFileLines, &ChildProcStack[ChildProcStackSize], CLONE_VM | CLONE_THREAD | CLONE_SIGHAND | SIGCHLD, (void *)&Indexer);
+        if(ChildPid == -1)
+                error(1, errno, "Could not create child process");
 
         u32 FrameBufferSize = Frame.Width * Frame.Height * sizeof(*Frame.Pixels);
         u32 InputSize = Kilobytes(1);
         u32 DebugBufferSize = Kilobytes(1);
-        u32 LinesIdxSize = (LinesCount + 1) * sizeof(u32);
-        u32 MemSize = FrameBufferSize + InputSize + DebugBufferSize + LinesIdxSize;
+        u32 MemSize = FrameBufferSize + InputSize + DebugBufferSize;
         u8 *Mem = (u8 *) mmap(0, MemSize, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
 
         Frame.Pixels = (u32 *)Mem;
         Input.Data = (char *)(Mem + FrameBufferSize); (void) Input;
         DebugBuffer.Data = (char *)(Mem + FrameBufferSize + InputSize);
-        LinesIdx.Data = (u32 *)(Mem + FrameBufferSize + InputSize + DebugBufferSize);
-
         Input.Count = 0; (void) Input;
         DebugBuffer.Count = 0;
-        LinesIdx.Count = LinesCount + 1;
-
-        LinesIdx.Data[0] = 0;
-        for(u32 Idx=0, LineIdx=1; Idx<FileSize; Idx++)
-                if(File[Idx] == '\n')
-                        LinesIdx.Data[LineIdx++] = Idx;
 
         InitWindow(Frame, "Minicel");
 
